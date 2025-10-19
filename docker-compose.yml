@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   backend:
     build: .
     container_name: poster-backend
     ports:
-      - '3000:3000'
+      - '3001:3001'
     volumes:
       - ./backend:/app/backend:ro
       - ./blog.db:/app/blog.db

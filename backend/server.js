@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const Database = require("better-sqlite3");
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 
 // Initialize SQLite database (creates file if not exists)
 const db = new Database("blog.db");
