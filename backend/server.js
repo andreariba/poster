@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const Database = require("better-sqlite3");
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Initialize SQLite database (creates file if not exists)
 const db = new Database("blog.db");
@@ -55,6 +55,6 @@ app.delete("/posts/:id", (req, res) => {
   res.json({ success: true });
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running on http://0.0.0.0:${PORT}`);
 });

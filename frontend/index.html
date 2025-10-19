@@ -100,7 +100,13 @@
 </main>
 
 <script>
-const apiUrl = "http://localhost:3000/posts";
+// Determine API base so app works on poster.local (prod) and localhost (dev)
+const backendDefaultPort = 3001; // matches backend default PORT
+const devHosts = ['localhost', '127.0.0.1', '::1'];
+const API_BASE = devHosts.includes(window.location.hostname)
+  ? `http://localhost:${backendDefaultPort}`
+  : window.location.origin; // in prod (poster.local) assume same origin
+const apiUrl = `${API_BASE}/posts`;
 const postContainer = document.getElementById("posts");
 const postForm = document.getElementById("post-form");
 const newPostBtn = document.getElementById("new-post-btn");
