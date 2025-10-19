@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: poster-backend
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./backend:/app/backend:ro
+      - ./blog.db:/app/blog.db
+    environment:
+      - NODE_ENV=production
+
+  frontend:
+    image: nginx:stable-alpine
+    container_name: poster-frontend
+    ports:
+      - '6006:80'
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
