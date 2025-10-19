@@ -65,6 +65,14 @@
   .expand-btn:hover{ text-decoration:underline; }
   .delete-btn { background:none; border:none; color: var(--danger); font-size:1.2rem; cursor:pointer; padding:0; transition: opacity 0.2s;}
   .delete-btn:hover { opacity:0.8;}
+  /* Modal / exploded card styles */
+  #post-modal { display:none; }
+  #post-modal .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem}
+  #post-modal .modal-card{background:var(--card);color:var(--text);max-width:900px;width:100%;border-radius:12px;padding:1.25rem;box-shadow:0 12px 40px rgba(0,0,0,0.6);max-height:90vh;overflow:auto;position:relative}
+  #post-modal .modal-close{position:absolute;right:0.75rem;top:0.5rem;background:none;border:none;color:var(--text);cursor:pointer;font-size:1.1rem}
+  #post-modal .modal-title{font-size:1.35rem;margin:0}
+  #post-modal .modal-date{font-size:0.85rem;color:var(--muted);margin-top:0.35rem}
+  #post-modal .modal-body{margin-top:0.9rem;color:#ddd;line-height:1.6;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -148,6 +156,13 @@ async function loadPosts(){
         };
         card.querySelector(".delete-btn").addEventListener("click", deleteBtnHandler);
 
+        // Open exploded modal when clicking the card (but ignore clicks on buttons inside card)
+        card.addEventListener('click', (e)=>{
+          const btn = e.target.closest('button');
+          if(btn) return; // clicked a button (delete/expand) so ignore
+          openModal(post);
+        });
+
         // Make content collapsible if too long
         const contentEl = card.querySelector('.post-content');
         // Use a timeout to ensure styles/layout applied
@@ -179,6 +194,47 @@ async function loadPosts(){
 }
 
 loadPosts();
+
+    // --- Modal DOM + handlers (exploded card) ---
+    const modalWrapper = document.createElement('div');
+    modalWrapper.id = 'post-modal';
+    modalWrapper.innerHTML = `
+      <div class="modal-backdrop" role="dialog" aria-modal="true">
+        <div class="modal-card">
+          <button class="modal-close" aria-label="Close">✕</button>
+          <h2 class="modal-title"></h2>
+          <div class="modal-date"></div>
+          <div class="modal-body"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalWrapper);
+
+    function openModal(post){
+      modalWrapper.style.display = 'block';
+      const titleEl = modalWrapper.querySelector('.modal-title');
+      const dateEl = modalWrapper.querySelector('.modal-date');
+      const bodyEl = modalWrapper.querySelector('.modal-body');
+      titleEl.textContent = post.title;
+      dateEl.textContent = new Date(post.date).toLocaleString();
+      bodyEl.textContent = post.content;
+      // focus close button for accessibility
+      modalWrapper.querySelector('.modal-close').focus();
+      // add escape key listener
+      document.addEventListener('keydown', modalEscapeHandler);
+    }
+
+    function closeModal(){
+      modalWrapper.style.display = 'none';
+      document.removeEventListener('keydown', modalEscapeHandler);
+    }
+
+    function modalEscapeHandler(e){ if(e.key === 'Escape') closeModal(); }
+
+    modalWrapper.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('modal-backdrop')) closeModal();
+    });
+    modalWrapper.querySelector('.modal-close').addEventListener('click', closeModal);
 </script>
 </body>
 </html>
