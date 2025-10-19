@@ -23,13 +23,13 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Get all posts
-app.get("/posts", (req, res) => {
+app.get("/api/posts", (req, res) => {
   const posts = db.prepare("SELECT * FROM posts ORDER BY id DESC").all();
   res.json(posts);
 });
 
 // Create a new post
-app.post("/posts", (req, res) => {
+app.post("/api/posts", (req, res) => {
   const { title, content, date } = req.body;
   if (!title || !content || !date) {
     return res.status(400).json({ error: "Missing fields" });
@@ -43,7 +43,7 @@ app.post("/posts", (req, res) => {
 });
 
 // Delete a post
-app.delete("/posts/:id", (req, res) => {
+app.delete("/api/posts/:id", (req, res) => {
   const { id } = req.params;
   const stmt = db.prepare("DELETE FROM posts WHERE id = ?");
   const info = stmt.run(id);
