@@ -74,6 +74,8 @@
   #post-modal .modal-date{font-size:0.85rem;color:var(--muted);margin-top:0.35rem}
   #post-modal .modal-body{margin-top:0.9rem;color:#ddd;line-height:1.6;white-space:pre-wrap}
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 </head>
 <body>
 <header>
@@ -122,8 +124,6 @@ cancelPostBtn.addEventListener("click", ()=>{
   newPostBtn.style.display="inline-block";
 });
 
-function escapeHtml(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
 postForm.addEventListener("submit", async(e)=>{
   e.preventDefault();
   const title = document.getElementById("title").value.trim();
@@ -152,7 +152,7 @@ async function loadPosts(){
           <div><h3>${escapeHtml(post.title)}</h3><div class="post-date">${new Date(post.date).toLocaleString()}</div></div>
           <button class="delete-btn" data-id="${post.id}">🗑️</button>
         </div>
-        <div class="post-content">${escapeHtml(post.content)}</div>`;
+        <div class="post-content">${DOMPurify.sanitize(marked.parse(post.content))}</div>`;
         const deleteBtnHandler = async()=>{
         try{
           const res=await fetch(`${apiUrl}/${post.id}`,{method:"DELETE"});
@@ -223,7 +223,7 @@ loadPosts();
       const bodyEl = modalWrapper.querySelector('.modal-body');
       titleEl.textContent = post.title;
       dateEl.textContent = new Date(post.date).toLocaleString();
-      bodyEl.textContent = post.content;
+      bodyEl.innerHTML = DOMPurify.sanitize(marked.parse(post.content));
       // focus close button for accessibility
       modalWrapper.querySelector('.modal-close').focus();
       // add escape key listener
