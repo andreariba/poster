@@ -75,7 +75,7 @@
   #post-modal .modal-body{margin-top:0.9rem;color:#ddd;line-height:1.6;white-space:pre-wrap}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
 </head>
 <body>
 <header>
@@ -102,13 +102,27 @@
 </main>
 
 <script>
-// Determine API base so app works on poster.local (prod) and localhost (dev)
 const backendDefaultPort = 3001; // matches backend default PORT
 const devHosts = ['localhost', '127.0.0.1', '::1'];
 const API_PREFIX = devHosts.includes(window.location.hostname)
   ? `http://localhost:${backendDefaultPort}/api`
   : `${window.location.origin}/api`; // in prod (poster.local) API lives under /api
 const apiUrl = `${API_PREFIX}/posts`;
+console.log("DEBUG: Fetching posts from:", apiUrl);
+
+fetch(apiUrl)
+  .then(response => {
+    console.log("DEBUG: Response status:", response.status);
+    return response.json();
+  })
+  .then(posts => {
+    // ...existing code to render posts...
+  })
+  .catch(error => {
+    console.error("DEBUG: Error fetching posts:", error);
+    document.getElementById("posts").innerHTML = "Failed to load posts";
+  });
+
 const postContainer = document.getElementById("posts");
 const postForm = document.getElementById("post-form");
 const newPostBtn = document.getElementById("new-post-btn");
@@ -138,6 +152,8 @@ postForm.addEventListener("submit", async(e)=>{
     loadPosts();
   }catch(err){console.error(err); alert("Failed to create post.");}
 });
+
+function escapeHtml(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 async function loadPosts(){
   try{
