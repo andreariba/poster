@@ -15,9 +15,23 @@ db.prepare(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
-    date TEXT NOT NULL
+    date TEXT NOT NULL,
+    read INTEGER NOT NULL DEFAULT 0
   )
 `).run();
+
+// After table creation, add global 'read' flag column
+// Attempt ALTER TABLE only if column missing (older DB without read column)
+try {
+  const pragma = db.prepare("PRAGMA table_info(posts)").all();
+  const hasRead = pragma.some(col => col.name === 'read');
+  if(!hasRead){
+    db.prepare("ALTER TABLE posts ADD COLUMN read INTEGER DEFAULT 0").run();
+    console.log("✅ Added 'read' column to posts table.");
+  }
+} catch (e) {
+  console.warn("⚠️ Could not verify/add 'read' column:", e.message);
+}
 
 app.use(cors());
 // Increase body size limits and capture the raw body for debugging parse errors.
@@ -57,8 +71,7 @@ app.post("/api/posts", (req, res) => {
   if (!title || !content || !date) {
     return res.status(400).json({ error: "Missing fields" });
   }
-
-  const stmt = db.prepare("INSERT INTO posts (title, content, date) VALUES (?, ?, ?)");
+  const stmt = db.prepare("INSERT INTO posts (title, content, date, read) VALUES (?, ?, ?, 0)");
   const info = stmt.run(title, content, date);
   const newPost = db.prepare("SELECT * FROM posts WHERE id = ?").get(info.lastInsertRowid);
 
@@ -75,6 +88,28 @@ app.delete("/api/posts/:id", (req, res) => {
     return res.status(404).json({ error: "Post not found" });
   }
 
+  res.json({ success: true });
+});
+
+// Get unread count
+app.get('/api/posts/unread-count', (req, res) => {
+  try {
+    const row = db.prepare('SELECT COUNT(*) AS unread FROM posts WHERE read = 0').get();
+    res.json({ unread: row.unread });
+  } catch (e) {
+    console.error('Error fetching unread count:', e);
+    res.status(500).json({ error: 'Failed to get unread count' });
+  }
+});
+
+// Add new endpoint to mark a post as read (global flag update)
+app.post("/api/posts/:id/read", (req, res) => {
+  const { id } = req.params;
+  const stmt = db.prepare("UPDATE posts SET read = 1 WHERE id = ?");
+  const info = stmt.run(id);
+  if (info.changes === 0) {
+    return res.status(404).json({ error: "Post not found" });
+  }
   res.json({ success: true });
 });
 

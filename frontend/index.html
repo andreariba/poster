@@ -54,6 +54,9 @@
     box-shadow:0 6px 18px rgba(0,0,0,0.45); display:flex; flex-direction:column;
     justify-content:space-between; transition: transform 0.18s, box-shadow 0.18s; min-height:160px; }
   .post-card:hover { transform:translateY(-4px); box-shadow:0 4px 12px rgba(0,0,0,0.6);}
+  .post-card.read { opacity:0.75; }
+  .mark-read-btn { background:var(--accent);color:#fff;border:none;border-radius:6px;padding:0.35rem 0.6rem;cursor:pointer;font-size:0.7rem; }
+  .mark-read-btn:hover { background:#5ed162; }
   .post-header { display:flex; justify-content:space-between; align-items:start;}
   .post-header h3 { margin:0; font-size:1.2rem; line-height:1.25;}
   .post-date { font-size:0.82rem; color: var(--muted); margin-top:0.28rem;}
@@ -162,11 +165,17 @@ async function loadPosts(){
     const posts = await res.json();
     postContainer.innerHTML="";
     posts.forEach(post=>{
+      // Coerce read flag and log for debugging
+      const readFlag = Number(post.read) === 1;
+      console.log('DEBUG post id', post.id, 'read value raw:', post.read, 'coerced:', readFlag);
       const card=document.createElement("div");
-      card.className="post-card";
+      card.className="post-card" + (readFlag ? " read" : "");
         card.innerHTML=`<div class="post-header">
           <div><h3>${escapeHtml(post.title)}</h3><div class="post-date">${new Date(post.date).toLocaleString()}</div></div>
-          <button class="delete-btn" data-id="${post.id}">🗑️</button>
+          <div style="display:flex; gap:0.4rem; align-items:center;">
+            ${readFlag ? `<span class=\"read-badge\" style=\"background:var(--accent);color:#fff;font-size:0.65rem;padding:0.25rem 0.5rem;border-radius:6px;letter-spacing:0.5px;\">READ</span>` : `<button class=\"mark-read-btn\" data-id=\"${post.id}\" title=\"Mark as read\">Mark read</button>`}
+            <button class="delete-btn" data-id="${post.id}" title="Delete">🗑️</button>
+          </div>
         </div>
         <div class="post-content">${DOMPurify.sanitize(marked.parse(post.content))}</div>`;
         const deleteBtnHandler = async()=>{
@@ -177,6 +186,19 @@ async function loadPosts(){
         }catch(err){console.error(err); alert("Failed to delete post");}
         };
         card.querySelector(".delete-btn").addEventListener("click", deleteBtnHandler);
+
+        const markReadBtn = card.querySelector('.mark-read-btn');
+        if(markReadBtn){
+          markReadBtn.addEventListener('click', async (e)=>{
+            e.stopPropagation(); // prevent modal open
+            const id = markReadBtn.getAttribute('data-id');
+            try {
+              const res = await fetch(`${apiUrl}/${id}/read`, { method: 'POST' });
+              if(!res.ok) throw new Error('Mark read failed');
+              loadPosts();
+            } catch(err){ console.error(err); alert('Failed to mark as read'); }
+          });
+        }
 
         // Open exploded modal when clicking the card (but ignore clicks on buttons inside card)
         card.addEventListener('click', (e)=>{
